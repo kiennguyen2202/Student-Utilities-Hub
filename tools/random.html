@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Picker - Student Utilities Hub</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .result-box {
+            margin: 20px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            display: none;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 150px;
+            font-family: inherit;
+        }
+
+        .hint {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Về Trang Chủ
+        </a>
+
+        <div class="tool-container">
+            <h1><i class="fas fa-dice"></i> Random Picker</h1>
+            <p style="color: #666; margin-bottom: 30px;">Nhập danh sách các lựa chọn, mỗi lựa chọn trên một dòng</p>
+
+            <form id="pickerForm">
+                <textarea id="optionsInput" placeholder="Ví dụ:&#10;Lựa chọn 1&#10;Lựa chọn 2&#10;Lựa chọn 3"></textarea>
+                <p class="hint">💡 Mỗi dòng là một lựa chọn riêng biệt</p>
+
+                <button type="submit">
+                    <i class="fas fa-random"></i> Chọn Ngẫu Nhiên
+                </button>
+            </form>
+
+            <div id="resultBox" class="result-box">
+                <span id="resultText"></span>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
