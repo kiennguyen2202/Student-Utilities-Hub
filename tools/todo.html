@@ -177,6 +177,30 @@
             border-color: #667eea;
         }
 
+        .action-buttons {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .action-btn {
+            padding: 10px 20px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            width: auto;
+            margin: 0;
+        }
+
+        .action-btn:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+        }
+
         .edit-input {
             flex: 1;
             padding: 8px;
@@ -184,6 +208,101 @@
             border-radius: 5px;
             font-size: 1rem;
             margin: 0;
+        }
+
+        /* Animation cho todo item mới */
+        .todo-item-new {
+            animation: slideInFromRight 0.5s ease;
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Animation cho feedback */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+        }
+
+        /* Cải thiện responsive */
+        @media (max-width: 600px) {
+            .tool-container {
+                padding: 20px;
+            }
+
+            .add-todo-form {
+                flex-direction: column;
+            }
+
+            .add-todo-form button {
+                width: 100%;
+            }
+
+            .todo-stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .filter-buttons {
+                flex-wrap: wrap;
+            }
+
+            .todo-item {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .todo-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+        }
+
+        /* Hover effect cho back button */
+        .back-btn:hover {
+            background-color: #ddd;
+            transform: translateX(-3px);
+            transition: all 0.2s ease;
+        }
+
+        /* Cải thiện button hover */
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Smooth transition cho stats */
+        .stat-number {
+            transition: transform 0.2s ease;
         }
     </style>
 </head>
@@ -228,6 +347,12 @@
                 <button class="filter-btn" data-filter="completed">Đã hoàn thành</button>
             </div>
 
+            <div class="action-buttons" id="actionButtons" style="display: none;">
+                <button class="action-btn clear-completed-btn" id="clearCompletedBtn">
+                    <i class="fas fa-trash-alt"></i> Xóa tất cả đã hoàn thành
+                </button>
+            </div>
+
             <ul class="todo-list" id="todoList">
                 <!-- Todo items will be inserted here -->
             </ul>
@@ -240,12 +365,12 @@
     </div>
 
     <script>
-        // State management
+        // ========== STATE MANAGEMENT ==========
         let todos = JSON.parse(localStorage.getItem('todos')) || [];
         let currentFilter = 'all';
         let editingId = null;
 
-        // DOM elements
+        // ========== DOM ELEMENTS ==========
         const todoInput = document.getElementById('todoInput');
         const addBtn = document.getElementById('addBtn');
         const todoList = document.getElementById('todoList');
@@ -254,23 +379,44 @@
         const totalCount = document.getElementById('totalCount');
         const activeCount = document.getElementById('activeCount');
         const completedCount = document.getElementById('completedCount');
+        const actionButtons = document.getElementById('actionButtons');
+        const clearCompletedBtn = document.getElementById('clearCompletedBtn');
 
-        // Initialize
+        // ========== INITIALIZATION ==========
         function init() {
+            // Load todos from localStorage
+            try {
+                const stored = localStorage.getItem('todos');
+                if (stored) {
+                    todos = JSON.parse(stored);
+                }
+            } catch (error) {
+                console.error('Error loading todos:', error);
+                todos = [];
+            }
+
             renderTodos();
             updateStats();
             setupEventListeners();
+            
+            // Focus input on load
+            todoInput.focus();
         }
 
-        // Event listeners
+        // ========== EVENT LISTENERS ==========
         function setupEventListeners() {
+            // Add todo button
             addBtn.addEventListener('click', addTodo);
+            
+            // Add todo on Enter key
             todoInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
+                    e.preventDefault();
                     addTodo();
                 }
             });
 
+            // Filter buttons
             filterButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     filterButtons.forEach(b => b.classList.remove('active'));
@@ -279,13 +425,106 @@
                     renderTodos();
                 });
             });
+
+            // Event delegation for todo items
+            todoList.addEventListener('click', handleTodoClick);
+            todoList.addEventListener('change', handleTodoChange);
+            todoList.addEventListener('keydown', handleTodoKeydown);
+            todoList.addEventListener('blur', handleTodoBlur, true);
+
+            // Clear completed button
+            if (clearCompletedBtn) {
+                clearCompletedBtn.addEventListener('click', clearCompletedTodos);
+            }
         }
 
-        // Add new todo
+        // ========== EVENT HANDLERS ==========
+        function handleTodoClick(e) {
+            const todoItem = e.target.closest('.todo-item');
+            if (!todoItem) return;
+
+            const todoId = parseInt(todoItem.dataset.id);
+            
+            // Edit button
+            if (e.target.closest('.edit-btn') || e.target.classList.contains('fa-edit')) {
+                e.stopPropagation();
+                startEdit(todoId);
+                return;
+            }
+
+            // Delete button
+            if (e.target.closest('.delete-btn') || e.target.classList.contains('fa-trash')) {
+                e.stopPropagation();
+                deleteTodo(todoId);
+                return;
+            }
+
+            // Save edit button
+            if (e.target.closest('.save-edit-btn') || e.target.classList.contains('fa-check')) {
+                e.stopPropagation();
+                const input = todoItem.querySelector('.edit-input');
+                if (input) {
+                    saveEdit(todoId, input.value);
+                }
+                return;
+            }
+
+            // Cancel edit button
+            if (e.target.closest('.cancel-edit-btn') || e.target.classList.contains('fa-times')) {
+                e.stopPropagation();
+                cancelEdit();
+                return;
+            }
+        }
+
+        function handleTodoChange(e) {
+            if (e.target.classList.contains('todo-checkbox')) {
+                const todoId = parseInt(e.target.closest('.todo-item').dataset.id);
+                toggleTodo(todoId);
+            }
+        }
+
+        function handleTodoKeydown(e) {
+            if (e.target.classList.contains('edit-input')) {
+                const todoId = parseInt(e.target.closest('.todo-item').dataset.id);
+                
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveEdit(todoId, e.target.value);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelEdit();
+                }
+            }
+        }
+
+        function handleTodoBlur(e) {
+            if (e.target.classList.contains('edit-input')) {
+                // Delay to allow click events on buttons to fire first
+                setTimeout(() => {
+                    const todoItem = e.target.closest('.todo-item');
+                    if (todoItem && editingId) {
+                        const todoId = parseInt(todoItem.dataset.id);
+                        if (todoId === editingId) {
+                            saveEdit(todoId, e.target.value);
+                        }
+                    }
+                }, 200);
+            }
+        }
+
+        // ========== TODO OPERATIONS ==========
         function addTodo() {
             const text = todoInput.value.trim();
+            
             if (!text) {
+                showFeedback('Vui lòng nhập công việc!', 'warning');
                 todoInput.focus();
+                return;
+            }
+
+            if (text.length > 200) {
+                showFeedback('Công việc không được quá 200 ký tự!', 'warning');
                 return;
             }
 
@@ -300,11 +539,22 @@
             saveTodos();
             todoInput.value = '';
             todoInput.focus();
+            
             renderTodos();
             updateStats();
+            showFeedback('Đã thêm công việc mới!', 'success');
+            
+            // Scroll to new item
+            setTimeout(() => {
+                const newItem = todoList.querySelector(`[data-id="${newTodo.id}"]`);
+                if (newItem) {
+                    newItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    newItem.classList.add('todo-item-new');
+                    setTimeout(() => newItem.classList.remove('todo-item-new'), 500);
+                }
+            }, 100);
         }
 
-        // Toggle todo completion
         function toggleTodo(id) {
             const todo = todos.find(t => t.id === id);
             if (todo) {
@@ -312,46 +562,102 @@
                 saveTodos();
                 renderTodos();
                 updateStats();
+                
+                const message = todo.completed ? 'Đã hoàn thành!' : 'Đã hủy hoàn thành!';
+                showFeedback(message, 'info');
             }
         }
 
-        // Delete todo
         function deleteTodo(id) {
-            if (confirm('Bạn có chắc muốn xóa công việc này?')) {
-                todos = todos.filter(t => t.id !== id);
+            const todo = todos.find(t => t.id === id);
+            if (!todo) return;
+
+            if (confirm(`Bạn có chắc muốn xóa "${todo.text}"?`)) {
+                const index = todos.findIndex(t => t.id === id);
+                todos.splice(index, 1);
                 saveTodos();
-                renderTodos();
-                updateStats();
+                
+                // Animate removal
+                const todoItem = todoList.querySelector(`[data-id="${id}"]`);
+                if (todoItem) {
+                    todoItem.style.opacity = '0';
+                    todoItem.style.transform = 'translateX(-20px)';
+                    setTimeout(() => {
+                        renderTodos();
+                        updateStats();
+                        showFeedback('Đã xóa công việc!', 'success');
+                    }, 300);
+                } else {
+                    renderTodos();
+                    updateStats();
+                }
             }
         }
 
-        // Start editing todo
         function startEdit(id) {
             editingId = id;
             renderTodos();
         }
 
-        // Save edited todo
         function saveEdit(id, newText) {
             const todo = todos.find(t => t.id === id);
-            if (todo && newText.trim()) {
-                todo.text = newText.trim();
-                saveTodos();
+            if (!todo) {
                 editingId = null;
                 renderTodos();
-            } else if (!newText.trim()) {
-                editingId = null;
-                renderTodos();
+                return;
             }
+
+            const trimmedText = newText.trim();
+            
+            if (!trimmedText) {
+                showFeedback('Công việc không được để trống!', 'warning');
+                editingId = null;
+                renderTodos();
+                return;
+            }
+
+            if (trimmedText.length > 200) {
+                showFeedback('Công việc không được quá 200 ký tự!', 'warning');
+                return;
+            }
+
+            if (trimmedText === todo.text) {
+                // No change
+                editingId = null;
+                renderTodos();
+                return;
+            }
+
+            todo.text = trimmedText;
+            saveTodos();
+            editingId = null;
+            renderTodos();
+            showFeedback('Đã cập nhật công việc!', 'success');
         }
 
-        // Cancel editing
         function cancelEdit() {
             editingId = null;
             renderTodos();
         }
 
-        // Filter todos
+        function clearCompletedTodos() {
+            const completedCount = todos.filter(t => t.completed).length;
+            
+            if (completedCount === 0) {
+                showFeedback('Không có công việc đã hoàn thành để xóa!', 'warning');
+                return;
+            }
+
+            if (confirm(`Bạn có chắc muốn xóa ${completedCount} công việc đã hoàn thành?`)) {
+                todos = todos.filter(t => !t.completed);
+                saveTodos();
+                renderTodos();
+                updateStats();
+                showFeedback(`Đã xóa ${completedCount} công việc đã hoàn thành!`, 'success');
+            }
+        }
+
+        // ========== FILTER & RENDER ==========
         function getFilteredTodos() {
             switch (currentFilter) {
                 case 'active':
@@ -363,10 +669,10 @@
             }
         }
 
-        // Render todos
         function renderTodos() {
             const filteredTodos = getFilteredTodos();
             
+            // Show/hide empty state
             if (filteredTodos.length === 0) {
                 todoList.style.display = 'none';
                 emptyState.style.display = 'block';
@@ -375,33 +681,31 @@
                 emptyState.style.display = 'none';
             }
 
+            // Render todos
             todoList.innerHTML = filteredTodos.map(todo => {
                 if (editingId === todo.id) {
                     return `
-                        <li class="todo-item">
+                        <li class="todo-item" data-id="${todo.id}">
                             <input type="text" class="edit-input" value="${escapeHtml(todo.text)}" 
-                                   id="editInput-${todo.id}" 
-                                   onkeypress="handleEditKeyPress(event, ${todo.id})"
-                                   onblur="saveEdit(${todo.id}, document.getElementById('editInput-${todo.id}').value)">
-                            <button class="todo-btn edit-btn" onclick="saveEdit(${todo.id}, document.getElementById('editInput-${todo.id}').value)">
+                                   maxlength="200">
+                            <button class="todo-btn edit-btn save-edit-btn" title="Lưu">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button class="todo-btn delete-btn" onclick="cancelEdit()">
+                            <button class="todo-btn delete-btn cancel-edit-btn" title="Hủy">
                                 <i class="fas fa-times"></i>
                             </button>
                         </li>
                     `;
                 } else {
                     return `
-                        <li class="todo-item ${todo.completed ? 'completed' : ''}">
-                            <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} 
-                                   onchange="toggleTodo(${todo.id})">
+                        <li class="todo-item ${todo.completed ? 'completed' : ''}" data-id="${todo.id}">
+                            <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''}>
                             <span class="todo-text">${escapeHtml(todo.text)}</span>
                             <div class="todo-actions">
-                                <button class="todo-btn edit-btn" onclick="startEdit(${todo.id})" title="Chỉnh sửa">
+                                <button class="todo-btn edit-btn" title="Chỉnh sửa">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="todo-btn delete-btn" onclick="deleteTodo(${todo.id})" title="Xóa">
+                                <button class="todo-btn delete-btn" title="Xóa">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -412,52 +716,112 @@
 
             // Focus on edit input if editing
             if (editingId) {
-                const editInput = document.getElementById(`editInput-${editingId}`);
-                if (editInput) {
-                    editInput.focus();
-                    editInput.select();
+                setTimeout(() => {
+                    const editInput = todoList.querySelector('.edit-input');
+                    if (editInput) {
+                        editInput.focus();
+                        editInput.select();
+                    }
+                }, 50);
+            }
+        }
+
+        // ========== STATISTICS ==========
+        function updateStats() {
+            const total = todos.length;
+            const active = todos.filter(t => !t.completed).length;
+            const completed = todos.filter(t => t.completed).length;
+
+            totalCount.textContent = total;
+            activeCount.textContent = active;
+            completedCount.textContent = completed;
+
+            // Show/hide clear completed button
+            if (actionButtons) {
+                if (completed > 0) {
+                    actionButtons.style.display = 'block';
+                } else {
+                    actionButtons.style.display = 'none';
                 }
             }
+
+            // Animate number changes
+            [totalCount, activeCount, completedCount].forEach(el => {
+                el.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    el.style.transform = 'scale(1)';
+                }, 200);
+            });
         }
 
-        // Handle edit input keypress
-        function handleEditKeyPress(event, id) {
-            if (event.key === 'Enter') {
-                saveEdit(id, event.target.value);
-            } else if (event.key === 'Escape') {
-                cancelEdit();
+        // ========== STORAGE ==========
+        function saveTodos() {
+            try {
+                localStorage.setItem('todos', JSON.stringify(todos));
+            } catch (error) {
+                console.error('Error saving todos:', error);
+                showFeedback('Lỗi khi lưu dữ liệu!', 'error');
             }
         }
 
-        // Update statistics
-        function updateStats() {
-            totalCount.textContent = todos.length;
-            activeCount.textContent = todos.filter(t => !t.completed).length;
-            completedCount.textContent = todos.filter(t => t.completed).length;
-        }
-
-        // Save todos to localStorage
-        function saveTodos() {
-            localStorage.setItem('todos', JSON.stringify(todos));
-        }
-
-        // Escape HTML to prevent XSS
+        // ========== UTILITIES ==========
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // Make functions globally available for inline handlers
-        window.toggleTodo = toggleTodo;
-        window.deleteTodo = deleteTodo;
-        window.startEdit = startEdit;
-        window.saveEdit = saveEdit;
-        window.cancelEdit = cancelEdit;
-        window.handleEditKeyPress = handleEditKeyPress;
+        function showFeedback(message, type = 'info') {
+            // Remove existing feedback
+            const existing = document.querySelector('.feedback-message');
+            if (existing) {
+                existing.remove();
+            }
 
-        // Initialize on page load
-        init();
+            // Create feedback element
+            const feedback = document.createElement('div');
+            feedback.className = `feedback-message feedback-${type}`;
+            feedback.textContent = message;
+            
+            // Add styles
+            Object.assign(feedback.style, {
+                position: 'fixed',
+                top: '20px',
+                right: '20px',
+                padding: '12px 20px',
+                borderRadius: '8px',
+                color: 'white',
+                fontWeight: 'bold',
+                zIndex: '1000',
+                animation: 'slideIn 0.3s ease',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            });
+
+            // Set background color based on type
+            const colors = {
+                success: '#28a745',
+                warning: '#ffc107',
+                error: '#dc3545',
+                info: '#667eea'
+            };
+            feedback.style.backgroundColor = colors[type] || colors.info;
+
+            document.body.appendChild(feedback);
+
+            // Remove after 3 seconds
+            setTimeout(() => {
+                feedback.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => feedback.remove(), 300);
+            }, 3000);
+        }
+
+        // ========== INITIALIZE ==========
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 
