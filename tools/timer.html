@@ -21,3 +21,42 @@
 
 </body>
 </html>
+<script>
+    let time = 25 * 60;
+    let timerInterval = null;
+
+    const display = document.getElementById("time-display");
+    const startBtn = document.getElementById("start-btn");
+    const pauseBtn = document.getElementById("pause-btn");
+    const resetBtn = document.getElementById("reset-btn");
+
+    function updateDisplay() {
+        const minutes = Math.floor(time / 60);
+        const seconds = time % 60;
+        display.textContent =
+            `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    }
+
+    startBtn.onclick = function () {
+        if (timerInterval) return;
+
+        timerInterval = setInterval(() => {
+            if (time > 0) {
+                time--;
+                updateDisplay();
+            }
+        }, 1000);
+    };
+
+    pauseBtn.onclick = function () {
+        clearInterval(timerInterval);
+        timerInterval = null;
+    };
+
+    resetBtn.onclick = function () {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        time = 25 * 60;
+        updateDisplay();
+    };
+</script>
