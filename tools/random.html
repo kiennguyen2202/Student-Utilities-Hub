@@ -68,6 +68,50 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('pickerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const optionsInput = document.getElementById('optionsInput').value.trim();
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+
+            // Kiểm tra input có rỗng không
+            if (!optionsInput) {
+                alert('Vui lòng nhập ít nhất một lựa chọn!');
+                return;
+            }
+
+            // Tách các dòng thành mảng và loại bỏ dòng trống
+            const options = optionsInput
+                .split('\n')
+                .map(option => option.trim())
+                .filter(option => option.length > 0);
+
+            // Kiểm tra có ít nhất 1 lựa chọn hợp lệ
+            if (options.length === 0) {
+                alert('Vui lòng nhập ít nhất một lựa chọn hợp lệ!');
+                return;
+            }
+
+            // Hiệu ứng loading
+            resultBox.style.display = 'flex';
+            resultText.textContent = 'Đang quay...';
+            resultBox.style.opacity = '0.7';
+
+            // Tạo hiệu ứng delay trước khi hiển thị kết quả
+            setTimeout(() => {
+                // Chọn ngẫu nhiên một phần tử
+                const randomIndex = Math.floor(Math.random() * options.length);
+                const selectedOption = options[randomIndex];
+
+                // Hiển thị kết quả
+                resultText.textContent = selectedOption;
+                resultBox.style.opacity = '1';
+            }, 500);
+        });
+    </script>
 </body>
 
 </html>
