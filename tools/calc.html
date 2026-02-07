@@ -77,6 +77,41 @@
         </div>
 
     </div>
+    <script>
+        function calculate(operator) {
+            const a = parseFloat(document.getElementById("num1").value);
+            const b = parseFloat(document.getElementById("num2").value);
+            const resultEl = document.getElementById("result");
+
+            if (isNaN(a) || isNaN(b)) {
+                resultEl.innerText = "⚠️ Vui lòng nhập đủ 2 số";
+                return;
+            }
+
+            let result;
+
+            switch (operator) {
+                case '+':
+                    result = a + b;
+                    break;
+                case '-':
+                    result = a - b;
+                    break;
+                case '*':
+                    result = a * b;
+                    break;
+                case '/':
+                    if (b === 0) {
+                        resultEl.innerText = "❌ Không thể chia cho 0";
+                        return;
+                    }
+                    result = a / b;
+                    break;
+            }
+
+            resultEl.innerText = "Kết quả: " + result;
+        }
+    </script>
 </body>
 
 </html>
