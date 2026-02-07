@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Việc - Student Utilities Hub</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .todo-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .todo-header h2 {
+            color: #667eea;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .add-todo-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .add-todo-form input {
+            flex: 1;
+            margin: 0;
+        }
+
+        .add-todo-form button {
+            width: auto;
+            min-width: 100px;
+            margin: 0;
+        }
+
+        .todo-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-item .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .todo-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .todo-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border: 1px solid #e1e1e1;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .todo-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .todo-item.completed {
+            opacity: 0.6;
+            background-color: #f8f9fa;
+        }
+
+        .todo-item.completed .todo-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .todo-text {
+            flex: 1;
+            text-align: left;
+            font-size: 1rem;
+            word-break: break-word;
+        }
+
+        .todo-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .todo-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: all 0.2s ease;
+            width: auto;
+            margin: 0;
+        }
+
+        .todo-btn.edit-btn {
+            color: #667eea;
+        }
+
+        .todo-btn.edit-btn:hover {
+            background-color: #e8ecff;
+        }
+
+        .todo-btn.delete-btn {
+            color: #e74c3c;
+        }
+
+        .todo-btn.delete-btn:hover {
+            background-color: #ffeaea;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #ddd;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background-color: #f0f2f5;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: auto;
+            margin: 0;
+            font-weight: normal;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .edit-input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #667eea;
+            border-radius: 5px;
+            font-size: 1rem;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-btn">
+            <i class="fas fa-arrow-left"></i> Quay lại
+        </a>
+
+        <div class="tool-container">
+            <div class="todo-header">
+                <h2><i class="fas fa-list-check"></i> Danh Sách Việc Cần Làm</h2>
+                <p>Quản lý công việc của bạn một cách hiệu quả</p>
+            </div>
+
+            <div class="add-todo-form">
+                <input type="text" id="todoInput" placeholder="Nhập công việc mới..." maxlength="200">
+                <button type="button" id="addBtn">
+                    <i class="fas fa-plus"></i> Thêm
+                </button>
+            </div>
+
+            <div class="todo-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalCount">0</div>
+                    <div class="stat-label">Tổng cộng</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="activeCount">0</div>
+                    <div class="stat-label">Chưa hoàn thành</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="completedCount">0</div>
+                    <div class="stat-label">Đã hoàn thành</div>
+                </div>
+            </div>
+
+            <div class="filter-buttons">
+                <button class="filter-btn active" data-filter="all">Tất cả</button>
+                <button class="filter-btn" data-filter="active">Chưa hoàn thành</button>
+                <button class="filter-btn" data-filter="completed">Đã hoàn thành</button>
+            </div>
+
+            <ul class="todo-list" id="todoList">
+                <!-- Todo items will be inserted here -->
+            </ul>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <i class="fas fa-clipboard-list"></i>
+                <p>Chưa có công việc nào. Hãy thêm công việc mới!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let todos = JSON.parse(localStorage.getItem('todos')) || [];
+        let currentFilter = 'all';
+        let editingId = null;
+
+        // DOM elements
+        const todoInput = document.getElementById('todoInput');
+        const addBtn = document.getElementById('addBtn');
+        const todoList = document.getElementById('todoList');
+        const emptyState = document.getElementById('emptyState');
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        const totalCount = document.getElementById('totalCount');
+        const activeCount = document.getElementById('activeCount');
+        const completedCount = document.getElementById('completedCount');
+
+        // Initialize
+        function init() {
+            renderTodos();
+            updateStats();
+            setupEventListeners();
+        }
+
+        // Event listeners
+        function setupEventListeners() {
+            addBtn.addEventListener('click', addTodo);
+            todoInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addTodo();
+                }
+            });
+
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.filter;
+                    renderTodos();
+                });
+            });
+        }
+
+        // Add new todo
+        function addTodo() {
+            const text = todoInput.value.trim();
+            if (!text) {
+                todoInput.focus();
+                return;
+            }
+
+            const newTodo = {
+                id: Date.now(),
+                text: text,
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            todos.push(newTodo);
+            saveTodos();
+            todoInput.value = '';
+            todoInput.focus();
+            renderTodos();
+            updateStats();
+        }
+
+        // Toggle todo completion
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                saveTodos();
+                renderTodos();
+                updateStats();
+            }
+        }
+
+        // Delete todo
+        function deleteTodo(id) {
+            if (confirm('Bạn có chắc muốn xóa công việc này?')) {
+                todos = todos.filter(t => t.id !== id);
+                saveTodos();
+                renderTodos();
+                updateStats();
+            }
+        }
+
+        // Start editing todo
+        function startEdit(id) {
+            editingId = id;
+            renderTodos();
+        }
+
+        // Save edited todo
+        function saveEdit(id, newText) {
+            const todo = todos.find(t => t.id === id);
+            if (todo && newText.trim()) {
+                todo.text = newText.trim();
+                saveTodos();
+                editingId = null;
+                renderTodos();
+            } else if (!newText.trim()) {
+                editingId = null;
+                renderTodos();
+            }
+        }
+
+        // Cancel editing
+        function cancelEdit() {
+            editingId = null;
+            renderTodos();
+        }
+
+        // Filter todos
+        function getFilteredTodos() {
+            switch (currentFilter) {
+                case 'active':
+                    return todos.filter(t => !t.completed);
+                case 'completed':
+                    return todos.filter(t => t.completed);
+                default:
+                    return todos;
+            }
+        }
+
+        // Render todos
+        function renderTodos() {
+            const filteredTodos = getFilteredTodos();
+            
+            if (filteredTodos.length === 0) {
+                todoList.style.display = 'none';
+                emptyState.style.display = 'block';
+            } else {
+                todoList.style.display = 'block';
+                emptyState.style.display = 'none';
+            }
+
+            todoList.innerHTML = filteredTodos.map(todo => {
+                if (editingId === todo.id) {
+                    return `
+                        <li class="todo-item">
+                            <input type="text" class="edit-input" value="${escapeHtml(todo.text)}" 
+                                   id="editInput-${todo.id}" 
+                                   onkeypress="handleEditKeyPress(event, ${todo.id})"
+                                   onblur="saveEdit(${todo.id}, document.getElementById('editInput-${todo.id}').value)">
+                            <button class="todo-btn edit-btn" onclick="saveEdit(${todo.id}, document.getElementById('editInput-${todo.id}').value)">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="todo-btn delete-btn" onclick="cancelEdit()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </li>
+                    `;
+                } else {
+                    return `
+                        <li class="todo-item ${todo.completed ? 'completed' : ''}">
+                            <input type="checkbox" class="todo-checkbox" ${todo.completed ? 'checked' : ''} 
+                                   onchange="toggleTodo(${todo.id})">
+                            <span class="todo-text">${escapeHtml(todo.text)}</span>
+                            <div class="todo-actions">
+                                <button class="todo-btn edit-btn" onclick="startEdit(${todo.id})" title="Chỉnh sửa">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="todo-btn delete-btn" onclick="deleteTodo(${todo.id})" title="Xóa">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </li>
+                    `;
+                }
+            }).join('');
+
+            // Focus on edit input if editing
+            if (editingId) {
+                const editInput = document.getElementById(`editInput-${editingId}`);
+                if (editInput) {
+                    editInput.focus();
+                    editInput.select();
+                }
+            }
+        }
+
+        // Handle edit input keypress
+        function handleEditKeyPress(event, id) {
+            if (event.key === 'Enter') {
+                saveEdit(id, event.target.value);
+            } else if (event.key === 'Escape') {
+                cancelEdit();
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            totalCount.textContent = todos.length;
+            activeCount.textContent = todos.filter(t => !t.completed).length;
+            completedCount.textContent = todos.filter(t => t.completed).length;
+        }
+
+        // Save todos to localStorage
+        function saveTodos() {
+            localStorage.setItem('todos', JSON.stringify(todos));
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Make functions globally available for inline handlers
+        window.toggleTodo = toggleTodo;
+        window.deleteTodo = deleteTodo;
+        window.startEdit = startEdit;
+        window.saveEdit = saveEdit;
+        window.cancelEdit = cancelEdit;
+        window.handleEditKeyPress = handleEditKeyPress;
+
+        // Initialize on page load
+        init();
+    </script>
+</body>
+
+</html>
+
